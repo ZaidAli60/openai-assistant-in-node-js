@@ -136,8 +136,7 @@ async function createVectorStore(file, vectorStoreName) {
 
 
 async function askQuestion(question, vector_store_id) {  // Added vector_store_id parameter
-  console.log('question',question )
-  console.log('vector_store_id',vector_store_id )
+  
   try {
 
     // const threadResponse = await openai.beta.threads.create({
