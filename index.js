@@ -134,12 +134,26 @@ async function createVectorStore(file, vectorStoreName) {
   }
 }
 
-// Function to ask a question using the vector store
-async function askQuestion(question) {
 
+async function askQuestion(question, vector_store_id) {  // Added vector_store_id parameter
+  console.log('question',question )
+  console.log('vector_store_id',vector_store_id )
   try {
 
-    const threadResponse = await openai.beta.threads.create();
+    // const threadResponse = await openai.beta.threads.create({
+    //   // Pass vector_store_id when creating a thread if needed here
+    //   vector_store_id: vector_store_id // Use vector_store_id if the API supports it
+    // });
+
+    const threadResponse = await openai.beta.threads.create({
+      messages: [{ role: 'user', content: question }],
+      tool_resources: {
+        file_search: {
+          vector_store_ids: [vector_store_id],
+        },
+      },
+    });
+
     const threadId = threadResponse.id;
  
     // Add a Message to a Thread
@@ -150,29 +164,29 @@ async function askQuestion(question) {
 
     // Run the Assistant
     const runResponse = await openai.beta.threads.runs.create(threadId, {
-      assistant_id: assistant_id,
+      assistant_id: assistant_id, // Assuming you have the assistant_id stored elsewhere
     });
 
-   let run = await openai.beta.threads.runs.retrieve(threadId, runResponse.id);
+    let run = await openai.beta.threads.runs.retrieve(threadId, runResponse.id);
 
-   while (run.status !== "completed") {
-     await new Promise((resolve) => setTimeout(resolve, 1000));
-     run = await openai.beta.threads.runs.retrieve(threadId, runResponse.id);
+    while (run.status !== "completed") {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      run = await openai.beta.threads.runs.retrieve(threadId, runResponse.id);
     }
 
-// Display the Assistant's Response
-const messagesResponse = await openai.beta.threads.messages.list(threadId);
-const assistantResponses = messagesResponse.data.filter(msg => msg.role === 'assistant');
-const response = assistantResponses.map(msg => 
-msg.content
-.filter(contentItem => contentItem.type === 'text')
-.map(textContent => textContent.text.value)
-.join('\n')
-).join('\n');
+    // Display the Assistant's Response
+    const messagesResponse = await openai.beta.threads.messages.list(threadId);
+    const assistantResponses = messagesResponse.data.filter(msg => msg.role === 'assistant');
+    
+    const response = assistantResponses.map(msg => 
+      msg.content
+        .filter(contentItem => contentItem.type === 'text')
+        .map(textContent => textContent.text.value)
+        .join('\n')
+    ).join('\n');
 
-console.log('response', response)
-return response;
-
+    console.log('response', response);
+    return response;
 
   } catch (error) {
     console.error('Error during question processing:', error);
