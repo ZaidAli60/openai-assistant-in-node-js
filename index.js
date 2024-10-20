@@ -101,11 +101,12 @@ app.get('/documents', async (req, res) => {
 
 // API 3: Ask a question using the vector store
 app.post('/ask-question', async (req, res) => {
-  const { question, vector_store_id } = req.body;
+  let { question, vector_store_id } = req.body;
 
   if (!question || !vector_store_id) {
     return res.status(400).json({ error: "Both 'question' and 'vector_store_id' are required." });
   }
+  question = `${question}. Please do not send any relevant links, and also unwanted characters in the answer.`;
 
   try {
     // Get the answer from OpenAI using vector store
